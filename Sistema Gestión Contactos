@@ -1,0 +1,127 @@
+import mysql.connector
+from mysql.connector import Error
+
+class Producto:
+    def __init__(self, nombre, cantidad, precio, categoria):
+        self.nombre = nombre
+        self.cantidad = cantidad
+        self.precio = precio
+        self.categoria = categoria
+
+class GestionInventario:
+    def __init__(self):
+        try:
+            self.conexion = mysql.connector.connect(
+                host="localhost",
+                user="root",
+                password="",
+                database="inventario"
+            )
+            if self.conexion.is_connected():
+                print("Conexión exitosa a la base de datos.")
+        except Error as e:
+            print(f"Error al conectar a la base de datos: {e}")
+
+    def agregar_producto(self, producto):
+        try:
+            cursor = self.conexion.cursor()
+            consulta = "INSERT INTO productos (nombre, cantidad, precio, categoria) VALUES (%s, %s, %s, %s)"
+            datos = (producto.nombre, producto.cantidad, producto.precio, producto.categoria)
+            cursor.execute(consulta, datos)
+            self.conexion.commit()
+            print("Producto agregado exitosamente.")
+        except Error as e:
+            print(f"Error al agregar producto: {e}")
+
+    def mostrar_productos(self):
+        try:
+            cursor = self.conexion.cursor()
+            cursor.execute("SELECT * FROM productos")
+            productos = cursor.fetchall()
+            for producto in productos:
+                print(producto)
+        except Error as e:
+            print(f"Error al mostrar productos: {e}")
+
+    def buscar_producto(self, nombre):
+        try:
+            cursor = self.conexion.cursor()
+            consulta = "SELECT * FROM productos WHERE nombre = %s"
+            cursor.execute(consulta, (nombre,))
+            producto = cursor.fetchone()
+            if producto:
+                print(producto)
+            else:
+                print("Producto no encontrado.")
+        except Error as e:
+            print(f"Error al buscar producto: {e}")
+
+    def actualizar_producto(self, nombre, cantidad=None, precio=None):
+        try:
+            cursor = self.conexion.cursor()
+            if cantidad:
+                consulta = "UPDATE productos SET cantidad = %s WHERE nombre = %s"
+                cursor.execute(consulta, (cantidad, nombre))
+            if precio:
+                consulta = "UPDATE productos SET precio = %s WHERE nombre = %s"
+                cursor.execute(consulta, (precio, nombre))
+            self.conexion.commit()
+            print("Producto actualizado exitosamente.")
+        except Error as e:
+            print(f"Error al actualizar producto: {e}")
+
+    def eliminar_producto(self, nombre):
+        try:
+            cursor = self.conexion.cursor()
+            consulta = "DELETE FROM productos WHERE nombre = %s"
+            cursor.execute(consulta, (nombre,))
+            self.conexion.commit()
+            print("Producto eliminado exitosamente.")
+        except Error as e:
+            print(f"Error al eliminar producto: {e}")
+
+    def cerrar_conexion(self):
+        if self.conexion.is_connected():
+            self.conexion.close()
+            print("Conexión cerrada.")
+
+def menu():
+    gestion = GestionInventario()
+    while True:
+        print("\nMenú de Gestión de Inventario")
+        print("1. Agregar Producto")
+        print("2. Mostrar Productos")
+        print("3. Buscar Producto")
+        print("4. Actualizar Producto")
+        print("5. Eliminar Producto")
+        print("6. Salir")
+        opcion = input("Seleccione una opción: ")
+
+        if opcion == "1":
+            nombre = input("Nombre del producto: ")
+            cantidad = int(input("Cantidad: "))
+            precio = float(input("Precio: "))
+            categoria = input("Categoría: ")
+            producto = Producto(nombre, cantidad, precio, categoria)
+            gestion.agregar_producto(producto)
+        elif opcion == "2":
+            gestion.mostrar_productos()
+        elif opcion == "3":
+            nombre = input("Nombre del producto a buscar: ")
+            gestion.buscar_producto(nombre)
+        elif opcion == "4":
+            nombre = input("Nombre del producto a actualizar: ")
+            cantidad = input("Nueva cantidad (dejar vacío para no actualizar): ")
+            precio = input("Nuevo precio (dejar vacío para no actualizar): ")
+            gestion.actualizar_producto(nombre, int(cantidad) if cantidad else None, float(precio) if precio else None)
+        elif opcion == "5":
+            nombre = input("Nombre del producto a eliminar: ")
+            gestion.eliminar_producto(nombre)
+        elif opcion == "6":
+            gestion.cerrar_conexion()
+            break
+        else:
+            print("Opción inválida. Intente de nuevo.")
+
+if __name__ == "__main__":
+    menu()
